@@ -36,9 +36,9 @@ public class DuolingoApi {
      * @throws IOException
      * @throws JSONException
      */
-    public UserRepresentation getWordsForUser(String username) throws IOException, JSONException {
+    public UserRepresentation getWordsForUser(UserRepresentation user) throws IOException, JSONException {
         // Example URL:  http://www.duolingo.com//users/rmeertens
-        JSONObject json = readJsonFromUrl("http://www.duolingo.com//users/" + username);
+        JSONObject json = readJsonFromUrl("http://www.duolingo.com//users/" + user.username);
 
         /* When wanting to extract more information:
          System.out.println(json.toString());
@@ -47,28 +47,23 @@ public class DuolingoApi {
          */
         // Get all languages the user knows
         JSONArray languages = json.getJSONArray("languages");
-        UserRepresentation ourUser = new UserRepresentation();
-        ourUser.username = username;
-        
+
         for (int i = 0; i < languages.length(); i++) {
-             if(languages.getJSONObject(i).getBoolean("learning") && languages.getJSONObject(i).getBoolean("current_learning"))
-              {
+            if (languages.getJSONObject(i).getBoolean("learning") && languages.getJSONObject(i).getBoolean("current_learning")) {
                 String nameLanguage = languages.getJSONObject(i).get("language").toString();
                 System.out.println("This user is learning " + nameLanguage);
-                ourUser.languageLearning = nameLanguage;
+                user.languageLearning = nameLanguage;
                 // If so: find the known words
                 ArrayList<String> knownWords = getWordsKnownForLanguage(nameLanguage, json);
                 LanguageWithWords wordThisLanguage = new LanguageWithWords();
                 wordThisLanguage.language = nameLanguage;
                 wordThisLanguage.wordsForLanguage = knownWords;
                 System.out.println("Found the wanted words");
-                ourUser.knownLanguagesWithWords.add(wordThisLanguage);
+                user.knownLanguagesWithWords.add(wordThisLanguage);
                 System.out.println("Added  the wanted words");
             }
         }
-        System.out.println("Returning");
-       
-        return ourUser;
+        return user;
     }
 
     /**
@@ -89,7 +84,7 @@ public class DuolingoApi {
 
         // Add all learned skills
         for (int index = 0; index < skillsChosenLanguage.length(); index++) {
-            if (skillsChosenLanguage.getJSONObject(index).getBoolean("learned") ) {
+            if (skillsChosenLanguage.getJSONObject(index).getBoolean("learned")) {
                 JSONArray wordsInSkill = skillsChosenLanguage.getJSONObject(index).getJSONArray("words");
                 for (int wordIndex = 0; wordIndex < wordsInSkill.length(); wordIndex++) {
                     knownWords.add(wordsInSkill.getString(wordIndex));
@@ -99,7 +94,6 @@ public class DuolingoApi {
         return knownWords;
     }
 
-    
     private static String readAll(Reader rd) throws IOException {
         StringBuilder sb = new StringBuilder();
         int cp;

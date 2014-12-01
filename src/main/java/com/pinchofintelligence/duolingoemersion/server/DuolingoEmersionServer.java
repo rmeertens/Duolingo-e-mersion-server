@@ -96,14 +96,16 @@ public class DuolingoEmersionServer {
 
             if (parms.containsKey("username")) {
                 String username = parms.get("username");
-                this.textArea.append(username + " asking for his stuff + \n");
+                
                 UserRepresentation ourUser = new UserRepresentation();
+                ourUser.username = username;
 
                 try {
-                    ourUser = duolingoApi.getWordsForUser("rmeertens");
+                    ourUser = duolingoApi.getWordsForUser(ourUser);
                 } catch (JSONException ex) {
                     Logger.getLogger(DuolingoEmersionServer.class.getName()).log(Level.SEVERE, null, ex);
                 }
+                this.textArea.append(username + " asking for songs in the language " + ourUser.languageLearning + "\n");
                 System.out.println("now we know our user");
                 LanguageWithWords lang = ourUser.knownLanguagesWithWords.get(0);
                 System.out.println("now we have his words");

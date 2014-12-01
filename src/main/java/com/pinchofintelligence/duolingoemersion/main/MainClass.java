@@ -46,6 +46,8 @@ public class MainClass {
     static public ArrayList<TrackInformation> getPopularTracks() throws IOException {
         ArrayList<TrackInformation> popularTracks = new ArrayList<TrackInformation>();
         String rootFolder = "database/";
+        popularTracks.addAll(getTrackInformationFromFile(rootFolder + "zweedsvankim.csv"));
+        popularTracks.addAll(getTrackInformationFromFile(rootFolder + "swedish-music.csv"));
         popularTracks.addAll(getTrackInformationFromFile(rootFolder + "top2000stemlijst_2012.csv"));
         popularTracks.addAll(getTrackInformationFromFile(rootFolder + "spanish-music-database-2-version-13.csv"));
         popularTracks.addAll(getTrackInformationFromFile(rootFolder + "aliensamaditop300artistschart.csv"));
@@ -60,8 +62,9 @@ public class MainClass {
         ArrayList<TrackInformation> popularTracks = new ArrayList<TrackInformation>();
         File csvData = new File(csvFile);
         CSVParser parser = CSVParser.parse(csvData, Charset.defaultCharset(), CSVFormat.RFC4180);
-
+        
         for (CSVRecord csvRecord : parser) {
+            System.out.println(csvRecord.toString());
             popularTracks.add(new TrackInformation(csvRecord.get(0), csvRecord.get(1)));
         }
         return popularTracks;
