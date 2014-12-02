@@ -126,16 +126,18 @@ public class LyricsDownloader {
             Track track = musixMatch.getMatchingTrack(firstInfo.nameSong, firstInfo.nameArtist);
             
             TrackData data = track.getTrack();
-
+            
+            
             System.out.println("AlbumID : " + data.getAlbumId());
             System.out.println("Album Name : " + data.getAlbumName());
             System.out.println("Artist ID : " + data.getArtistId());
             System.out.println("Album Name : " + data.getArtistName());
             System.out.println("Track ID : " + data.getTrackId());
             int trackID = data.getTrackId();
+            
 
             Lyrics lyrics = musixMatch.getLyrics(trackID);
-
+            
             System.out.println("Lyrics ID       : " + lyrics.getLyricsId());
             System.out.println("Lyrics Language : " + lyrics.getLyricsLang());
             System.out.println("Lyrics Body     : " + lyrics.getLyricsBody());

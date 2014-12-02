@@ -48,8 +48,8 @@ public class MainClass {
         String rootFolder = "database/";
         popularTracks.addAll(getTrackInformationFromFile(rootFolder + "zweedsvankim.csv"));
         popularTracks.addAll(getTrackInformationFromFile(rootFolder + "swedish-music.csv"));
-        popularTracks.addAll(getTrackInformationFromFile(rootFolder + "top2000stemlijst_2012.csv"));
         popularTracks.addAll(getTrackInformationFromFile(rootFolder + "spanish-music-database-2-version-13.csv"));
+        popularTracks.addAll(getTrackInformationFromFile(rootFolder + "top2000stemlijst_2012.csv"));
         popularTracks.addAll(getTrackInformationFromFile(rootFolder + "aliensamaditop300artistschart.csv"));
         System.out.println("now knows " + popularTracks.size());
 
@@ -61,7 +61,7 @@ public class MainClass {
     private static ArrayList<TrackInformation> getTrackInformationFromFile(String csvFile) throws IOException {
         ArrayList<TrackInformation> popularTracks = new ArrayList<TrackInformation>();
         File csvData = new File(csvFile);
-        CSVParser parser = CSVParser.parse(csvData, Charset.defaultCharset(), CSVFormat.RFC4180);
+        CSVParser parser = CSVParser.parse(csvData, Charset.forName("UTF-8"), CSVFormat.RFC4180);
         
         for (CSVRecord csvRecord : parser) {
             System.out.println(csvRecord.toString());

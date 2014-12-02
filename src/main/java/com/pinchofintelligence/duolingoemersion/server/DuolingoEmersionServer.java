@@ -12,6 +12,9 @@ import com.pinchofintelligence.duolingoemersion.duolingo.UserRepresentation;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import com.sun.net.httpserver.HttpsConfigurator;
+import com.sun.net.httpserver.HttpsParameters;
+import com.sun.net.httpserver.HttpsServer;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -19,6 +22,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.security.KeyStore;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -27,6 +31,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLParameters;
+import javax.net.ssl.TrustManagerFactory;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JScrollPane;
@@ -43,7 +51,7 @@ import org.json.JSONObject;
 public class DuolingoEmersionServer {
 
     JTextArea textArea;
-    private final MyHandler theHandler;
+    private final SongsBasedOnUsernameHandler songsBasedOnUsernameHandler;
 
     public DuolingoEmersionServer() throws Exception {
         HashMap<String, TrackInformation> tracksDatabase = loadDatabase();
@@ -63,140 +71,62 @@ public class DuolingoEmersionServer {
         frame.setVisible(true);
 
         System.out.println("Starting HTTP Duolingo Emersion server");
+        
+        /*
+        
+         char[] passphrase = "passphrase".toCharArray();
+   KeyStore ks = KeyStore.getInstance("JKS");
+   ks.load(new FileInputStream("testkeys"), passphrase);
+
+   KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
+   kmf.init(ks, passphrase);
+
+   TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
+   tmf.init(ks);
+
+   SSLContext ssl = SSLContext.getInstance("TLS");
+   ssl.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+   
+        
+        
+        
+        */
+        
         HttpServer server = HttpServer.create(new InetSocketAddress(8002), 0);
-        this.theHandler = new MyHandler(this, textArea, tracksDatabase);
-        server.createContext("/duolingorecommendation", theHandler);
+        /*
+        HttpsConfigurator a = new HttpsConfigurator(ssl) {
+            @Override
+            public void configure (HttpsParameters params) {
+
+            // get the remote address if needed
+            InetSocketAddress remote = params.getClientAddress();
+
+            SSLContext c = getSSLContext();
+
+            // get the default parameters
+            SSLParameters sslparams = c.getDefaultSSLParameters();
+            //if (remote.equals (...) ) {
+                // modify the default set for client x
+            //}
+
+            params.setSSLParameters(sslparams);
+            // statement above could throw IAE if any params invalid.
+            // eg. if app has a UI and parameters supplied by a user.
+
+            }
+        };
+        */
+       // server.setHttpsConfigurator (a);
+        
+        this.songsBasedOnUsernameHandler = new SongsBasedOnUsernameHandler(this, textArea, tracksDatabase);
+        server.createContext("/duolingorecommendation", songsBasedOnUsernameHandler);
+        
         server.setExecutor(null); // creates a default executor
         server.start();
 
     }
 
-    static class MyHandler implements HttpHandler {
-
-        DuolingoEmersionServer parent;
-        JTextArea textArea;
-        HashMap<String, TrackInformation> tracksDatabase;
-        DuolingoApi duolingoApi;
-
-        public MyHandler(DuolingoEmersionServer parent, JTextArea are, HashMap<String, TrackInformation> tracksDatabase) {
-            this.parent = parent;
-            this.textArea = are;
-            this.tracksDatabase = tracksDatabase;
-            duolingoApi = new DuolingoApi();
-
-        }
-
-        @Override
-        public void handle(HttpExchange t) throws IOException {
-
-            Map<String, String> parms = DuolingoEmersionServer.queryToMap(t
-                    .getRequestURI().getQuery());
-
-            String response = "";
-
-            if (parms.containsKey("username")) {
-                String username = parms.get("username");
-                
-                UserRepresentation ourUser = new UserRepresentation();
-                ourUser.username = username;
-
-                try {
-                    ourUser = duolingoApi.getWordsForUser(ourUser);
-                } catch (JSONException ex) {
-                    Logger.getLogger(DuolingoEmersionServer.class.getName()).log(Level.SEVERE, null, ex);
-                }
-                this.textArea.append(username + " asking for songs in the language " + ourUser.languageLearning + "\n");
-                System.out.println("now we know our user");
-                LanguageWithWords lang = ourUser.knownLanguagesWithWords.get(0);
-                System.out.println("now we have his words");
-                JSONArray languageResponse = best10Matches(lang.wordsForLanguage, ourUser.languageLearning);
-                System.out.println("now we know the response");
-                /*
-                try {
-                    toReturn.put(lang.language, languageResponse);
-                } catch (JSONException ex) {
-                    Logger.getLogger(DuolingoEmersionServer.class.getName()).log(Level.SEVERE, null, ex);
-                }
-                   */
-                response = languageResponse.toString();
-                System.out.println(response);
-
-            } else {
-                response = "Use /duolingorecommendation?username=yourname&foo=unused to see how to handle url parameters";
-                //192.168.2.17:8001/marioserver?option=pressButtons&name=Roland&command=left
-                System.out.println("Something else");
-                this.textArea.append("Received something strange\n");
-
-            }
-
-            t.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
-            t.getResponseHeaders().add("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE, HEAD");
-            t.getResponseHeaders().add("Access-Control-Allow-Headers", "X-PINGOTHER, Origin, X-Requested-With, Content-Type, Accept");
-            t.getResponseHeaders().add("Access-Control-Max-Age", "1728000");
-
-            t.sendResponseHeaders(200, response.length());
-            OutputStream os = t.getResponseBody();
-            os.write(response.getBytes());
-            os.close();
-        }
-
-        public JSONArray best10Matches(ArrayList<String> knownWords, String language) {
-            language = DuolingoLanguageNameAdapter.getMusixMatchLanguageFromDuoLingo(language);
-            Iterator it = this.tracksDatabase.entrySet().iterator();
-            List<LyricWithScore> scores = new ArrayList<LyricWithScore>();
-            while (it.hasNext()) {
-                Map.Entry pairs = (Map.Entry) it.next();
-                TrackInformation lyric = (TrackInformation) pairs.getValue();
-                if(lyric.lyricsBody != null){
-                    if(lyric.language.equals(language)){
-                        System.out.println(lyric.language);
-                        double score = 0.0;
-                        double wordsTested = 0.0;
-                        String[] wordsInLyric = lyric.lyricsBody.split(" ");
-
-                        for (String word : wordsInLyric) {
-
-                            wordsTested++;
-                            //   System.out.println("Testing if " + word + " is known");
-                            if (knownWords.contains(word.toLowerCase())) {
-                                score++;
-                            }
-                        }
-                        // System.out.println("The score is: " + score + "and tested : " + wordsTested);
-                        System.out.println("This lyric is known " + score / wordsTested);
-                        scores.add(new LyricWithScore(score / wordsTested, lyric));
-                        System.out.println("Done lyric known");   
-                    }
-                }
-            }
-            System.out.println("Starting to sort");
-            Collections.sort(scores);
-            System.out.println("now we have an ordered list");
-
-            try {
-
-                JSONArray best10Matches = new JSONArray();
-
-                for (int x = scores.size() - 1; x > scores.size() - 10 && x > 0; x--) {
-                    JSONObject jsonResponse = new JSONObject();
-
-                    jsonResponse.put("Artist", scores.get(x).trackInformation.nameArtist);
-                    jsonResponse.put("NameSong", scores.get(x).trackInformation.nameSong);
-                    jsonResponse.put("Score", scores.get(x).score);
-
-                    best10Matches.put(jsonResponse);
-                }
-                         //   jsonResponse.put("Best", scores.get(0).trackInformation.nameSong + " by " + scores.get(0).trackInformation.nameArtist + " because " + scores.get(0).score);
-                // JSONObject jsonResponse2 = new JSONObject();
-                //best10Matches.to
-                return best10Matches;
-            } catch (JSONException ex) {
-                Logger.getLogger(DuolingoEmersionServer.class.getName()).log(Level.SEVERE, null, ex);
-            }
-            return null;
-        }
-    }
-
+   
     /**
      * returns the url parameters in a map
      *
