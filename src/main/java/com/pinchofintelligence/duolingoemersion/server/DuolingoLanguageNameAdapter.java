@@ -12,6 +12,31 @@ package com.pinchofintelligence.duolingoemersion.server;
 public class DuolingoLanguageNameAdapter {
     public static String getMusixMatchLanguageFromDuoLingo(String language)
     {
+        // English
+        //  Duolingo: en
+        //  Our site: en
+        //  Musixmatch: en
+        
+        // Dutch
+        //  Duolingo: dn
+        //  Our site: nl
+        //  Musixmatch: nl
+        
+        // German
+        //  Duolingo: de
+        //  Our site: de
+        //  Musixmatch: de
+        
+        // Italian
+        //  Duolingo: it
+        //  Our site: it
+        //  Musixmatch: it
+        
+        // Spanish
+        //  Duolingo: de
+        //  Our site: de
+        //  Musixmatch: de
+        
         if("dn".equals(language))
         {
             return "nl";

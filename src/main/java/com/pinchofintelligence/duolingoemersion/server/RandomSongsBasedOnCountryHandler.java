@@ -52,9 +52,11 @@ import org.json.JSONObject;
             // Get the parameters from the query
             Map<String, String> parms = queryToMap(exchangeObject);
             String response = "";
-
-            if (parms.containsKey("username")) {
-                response = getResponseForUsername(parms.get("username"));
+            
+                
+               
+            if (parms.containsKey("language")) {
+                response = getSongsInLanguage(parms.get("language"));
                 
 
             } else {
@@ -87,19 +89,11 @@ import org.json.JSONObject;
             return getFirstTracksFromCollection(tracksWithCorrectLanguage);
         }
 
-    private String getResponseForUsername(String username) throws IOException {
+    private String getSongsInLanguage(String language) throws IOException {
                 
-        UserRepresentation ourUser = new UserRepresentation(username);
-        
 
-        try {
-            ourUser = duolingoApi.getWordsForUser(ourUser);
-        } catch (JSONException ex) {
-            Logger.getLogger(DuolingoEmersionServer.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        this.serverLog.append(username + " asking for random songs in the language " + ourUser.getLanguageLearning() + "\n");
-        LanguageWithWords lang = ourUser.knownLanguagesWithWords.get(0);
-        JSONArray languageResponse = randomSongs(ourUser.getLanguageLearning());
+        this.serverLog.append("random asking for random songs in the language " + language + "\n");
+        JSONArray languageResponse = randomSongs(language);
         return languageResponse.toString();
         
     }
