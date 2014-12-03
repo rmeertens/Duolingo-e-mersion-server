@@ -12,12 +12,28 @@ import java.util.ArrayList;
  * @author Roland
  */
 public class UserRepresentation {
-    public String username;
+    private String username;
     public ArrayList<LanguageWithWords> knownLanguagesWithWords ;
-    public String languageLearning;
+    private String languageLearning;
     public UserRepresentation()
     {
         knownLanguagesWithWords = new ArrayList<LanguageWithWords>();
+    }
+
+    public UserRepresentation(String username) {
+        this.username = username;
+    }
+    public String getUsername()
+    {
+        return username;
+    }
+    public String getLanguageLearning()
+    {
+        return languageLearning;
+    }
+
+    void setLanguageLearning(String nameLanguage) {
+        this.languageLearning = nameLanguage;
     }
     
 }

@@ -30,37 +30,29 @@ public class DuolingoApi {
     /**
      * Returns the words a user knows in a certain language
      *
-     * @param username Username on Duolingo
-     * @param language The language we want to know
+     * @param user The user representation
      * @return An arraylist with the words this person knows
      * @throws IOException
      * @throws JSONException
      */
     public UserRepresentation getWordsForUser(UserRepresentation user) throws IOException, JSONException {
         // Example URL:  http://www.duolingo.com//users/rmeertens
-        JSONObject json = readJsonFromUrl("http://www.duolingo.com//users/" + user.username);
+        JSONObject json = readJsonFromUrl("http://www.duolingo.com//users/" + user.getUsername());
 
-        /* When wanting to extract more information:
-         System.out.println(json.toString());
-         System.out.println(json.get("num_following"));
-         System.out.println(json.getJSONArray("languages"));
-         */
         // Get all languages the user knows
         JSONArray languages = json.getJSONArray("languages");
-
+        user.knownLanguagesWithWords = new ArrayList<>();
         for (int i = 0; i < languages.length(); i++) {
             if (languages.getJSONObject(i).getBoolean("learning") && languages.getJSONObject(i).getBoolean("current_learning")) {
                 String nameLanguage = languages.getJSONObject(i).get("language").toString();
-                System.out.println("This user is learning " + nameLanguage);
-                user.languageLearning = nameLanguage;
-                // If so: find the known words
+                user.setLanguageLearning(nameLanguage);
+
+                // find the known words
                 ArrayList<String> knownWords = getWordsKnownForLanguage(nameLanguage, json);
                 LanguageWithWords wordThisLanguage = new LanguageWithWords();
                 wordThisLanguage.language = nameLanguage;
                 wordThisLanguage.wordsForLanguage = knownWords;
-                System.out.println("Found the wanted words");
                 user.knownLanguagesWithWords.add(wordThisLanguage);
-                System.out.println("Added  the wanted words");
             }
         }
         return user;

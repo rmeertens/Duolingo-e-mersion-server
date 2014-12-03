@@ -5,10 +5,14 @@
  */
 package com.pinchofintelligence.duolingoemersion.server;
 
+import com.pinchofintelligence.duolingoemersion.server.tools.ServerLog;
 import com.pinchofintelligence.duolingoemersion.crawlers.music.TrackInformation;
 import com.pinchofintelligence.duolingoemersion.duolingo.DuolingoApi;
 import com.pinchofintelligence.duolingoemersion.duolingo.LanguageWithWords;
+import com.pinchofintelligence.duolingoemersion.duolingo.LyricWithScore;
 import com.pinchofintelligence.duolingoemersion.duolingo.UserRepresentation;
+import static com.pinchofintelligence.duolingoemersion.server.tools.ServerTools.addResponseHeaders;
+import static com.pinchofintelligence.duolingoemersion.server.tools.ServerTools.queryToMap;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import java.io.IOException;
@@ -32,82 +36,62 @@ import org.json.JSONObject;
  * @author Roland
  */
  class SongsBasedOnUsernameHandler implements HttpHandler {
-
-        DuolingoEmersionServer parent;
-        JTextArea textArea;
+        
+        
+        ServerLog serverLog;
         HashMap<String, TrackInformation> tracksDatabase;
         DuolingoApi duolingoApi;
 
-        public SongsBasedOnUsernameHandler(DuolingoEmersionServer parent, JTextArea are, HashMap<String, TrackInformation> tracksDatabase) {
-            this.parent = parent;
-            this.textArea = are;
+        public SongsBasedOnUsernameHandler(ServerLog serverLog, HashMap<String, TrackInformation> tracksDatabase) {
+            this.serverLog = serverLog;
             this.tracksDatabase = tracksDatabase;
             duolingoApi = new DuolingoApi();
 
         }
 
         @Override
-        public void handle(HttpExchange t) throws IOException {
-
-            Map<String, String> parms = DuolingoEmersionServer.queryToMap(t
-                    .getRequestURI().getQuery());
-
-            String response = "";
-
+        public void handle(HttpExchange exchangeObject) throws IOException {
+            Map<String, String> parms = queryToMap(exchangeObject);
+            String response;
             if (parms.containsKey("username")) {
-                String username = parms.get("username");
-                
-                UserRepresentation ourUser = new UserRepresentation();
-                ourUser.username = username;
-
+                UserRepresentation ourUser = new UserRepresentation(parms.get("username"));
+                System.out.println("Contains the username");
                 try {
                     ourUser = duolingoApi.getWordsForUser(ourUser);
+                    System.out.println("Done constructing our user");
                 } catch (JSONException ex) {
                     Logger.getLogger(DuolingoEmersionServer.class.getName()).log(Level.SEVERE, null, ex);
                 }
-                this.textArea.append(username + " asking for songs in the language " + ourUser.languageLearning + "\n");
-                System.out.println("now we know our user");
-                LanguageWithWords lang = ourUser.knownLanguagesWithWords.get(0);
-                System.out.println("now we have his words");
-                JSONArray languageResponse = best10Matches(lang.wordsForLanguage, ourUser.languageLearning);
-                System.out.println("now we know the response");
-                /*
-                try {
-                    toReturn.put(lang.language, languageResponse);
-                } catch (JSONException ex) {
-                    Logger.getLogger(DuolingoEmersionServer.class.getName()).log(Level.SEVERE, null, ex);
-                }
-                   */
+                System.out.println("Now goibng to test stuff");
+                //this.serverLog.append(ourUser.getUsername() + " asking for songs in the language " + ourUser.getLanguageLearning() + "\n");
                 
+                LanguageWithWords lang = ourUser.knownLanguagesWithWords.get(0);
+                JSONArray languageResponse = getBestMatches(lang.wordsForLanguage, ourUser.getLanguageLearning(),DuolingoEmersionServer.AMOUNT_OF_SONGS_RETURNING);
                 response = languageResponse.toString();
                 System.out.println(response);
 
             } else {
-                response = "Use /duolingorecommendation?username=yourname&foo=unused to see how to handle url parameters";
+                response = "Use /randomSong?username=yourname&foo=unused to see how to handle url parameters";
                 //192.168.2.17:8001/marioserver?option=pressButtons&name=Roland&command=left
                 System.out.println("Something else");
-                this.textArea.append("Received something strange\n");
+                this.serverLog.append("Received something strange\n");
 
             }
 
-            t.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
-            t.getResponseHeaders().add("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE, HEAD");
-            t.getResponseHeaders().add("Access-Control-Allow-Headers", "X-PINGOTHER, Origin, X-Requested-With, Content-Type, Accept");
-            t.getResponseHeaders().add("Access-Control-Max-Age", "1728000");
+            exchangeObject = addResponseHeaders(exchangeObject);
             
             byte[] bytes = response.getBytes(Charset.forName("UTF-8"));
-            t.sendResponseHeaders(200, bytes.length);
-            OutputStream os = t.getResponseBody();
-            //os.write(response.getBytes());
+            exchangeObject.sendResponseHeaders(200, bytes.length);
+            OutputStream os = exchangeObject.getResponseBody();
             os.write(bytes);
-
             os.close();
         }
 
-        public JSONArray best10Matches(ArrayList<String> knownWords, String language) {
+        public JSONArray getBestMatches(ArrayList<String> knownWords, String language, int amount) {
             language = DuolingoLanguageNameAdapter.getMusixMatchLanguageFromDuoLingo(language);
             Iterator it = this.tracksDatabase.entrySet().iterator();
-            List<DuolingoEmersionServer.LyricWithScore> scores = new ArrayList<DuolingoEmersionServer.LyricWithScore>();
+            List<LyricWithScore> scores = new ArrayList<>();
+            System.out.println("Getting the best matches");
             while (it.hasNext()) {
                 Map.Entry pairs = (Map.Entry) it.next();
                 TrackInformation lyric = (TrackInformation) pairs.getValue();
@@ -119,29 +103,23 @@ import org.json.JSONObject;
                         String[] wordsInLyric = lyric.lyricsBody.split(" ");
 
                         for (String word : wordsInLyric) {
-
-                            wordsTested++;
-                            //   System.out.println("Testing if " + word + " is known");
+                            wordsTested++;                         
                             if (knownWords.contains(word.toLowerCase())) {
                                 score++;
                             }
                         }
-                        // System.out.println("The score is: " + score + "and tested : " + wordsTested);
-                        System.out.println("This lyric is known " + score / wordsTested);
-                        scores.add(new DuolingoEmersionServer.LyricWithScore(score / wordsTested, lyric));
-                        System.out.println("Done lyric known");   
+                        int percentage = (int) ((score/wordsTested)*100.0);
+                        scores.add(new LyricWithScore(percentage, lyric));
                     }
                 }
             }
-            System.out.println("Starting to sort");
             Collections.sort(scores);
-            System.out.println("now we have an ordered list");
-
+            System.out.println("Now has sorted scores");
             try {
 
                 JSONArray best10Matches = new JSONArray();
 
-                for (int x = scores.size() - 1; x > scores.size() - 10 && x > 0; x--) {
+                for (int x = scores.size() - 1; x > scores.size() - amount && x > 0; x--) {
                     JSONObject jsonResponse = new JSONObject();
 
                     jsonResponse.put("Artist", scores.get(x).trackInformation.nameArtist);
@@ -150,9 +128,6 @@ import org.json.JSONObject;
 
                     best10Matches.put(jsonResponse);
                 }
-                         //   jsonResponse.put("Best", scores.get(0).trackInformation.nameSong + " by " + scores.get(0).trackInformation.nameArtist + " because " + scores.get(0).score);
-                // JSONObject jsonResponse2 = new JSONObject();
-                //best10Matches.to
                 return best10Matches;
             } catch (JSONException ex) {
                 Logger.getLogger(DuolingoEmersionServer.class.getName()).log(Level.SEVERE, null, ex);
