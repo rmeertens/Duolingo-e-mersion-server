@@ -37,6 +37,12 @@ public class DuolingoLanguageNameAdapter {
         //  Our site: de
         //  Musixmatch: de
         
+        // Portugese
+        //  Duolingo: pt
+        //  Our site: pt
+        //  Musixmatch: pt
+        
+        
         if("dn".equals(language))
         {
             return "nl";

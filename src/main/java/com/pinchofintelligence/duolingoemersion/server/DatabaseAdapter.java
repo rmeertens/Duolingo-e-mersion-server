@@ -23,8 +23,8 @@ public class DatabaseAdapter {
             while (it.hasNext()) {
                 Map.Entry pairs = (Map.Entry) it.next();
                 TrackInformation lyric = (TrackInformation) pairs.getValue();
-                if(lyric.lyricsBody != null){
-                    if(lyric.language.equals(language)){
+                if(lyric.getLyrics_body() != null){
+                    if(lyric.getLyrics_language().equals(language)){
                         tracksWithCorrectLanguage.add(lyric);
                     }
                 }

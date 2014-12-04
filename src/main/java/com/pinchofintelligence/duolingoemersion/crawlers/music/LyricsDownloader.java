@@ -5,6 +5,7 @@
  */
 package com.pinchofintelligence.duolingoemersion.crawlers.music;
 
+import com.google.gson.JsonSyntaxException;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -13,45 +14,26 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLConnection;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
 import org.jmusixmatch.MusixMatch;
 import org.jmusixmatch.MusixMatchException;
 import org.jmusixmatch.entity.lyrics.Lyrics;
 import org.jmusixmatch.entity.track.Track;
 import org.jmusixmatch.entity.track.TrackData;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-import org.xml.sax.XMLReader;
-import org.xml.sax.helpers.XMLReaderFactory;
 
 /**
  *
@@ -62,7 +44,7 @@ public class LyricsDownloader {
   
     
     HashMap<String, TrackInformation> tracksDatabase;
-    private String apiKey;
+    private final String apiKey;
     public LyricsDownloader() throws FileNotFoundException, IOException {
         // Read the key
         BufferedReader readFile = new BufferedReader(new FileReader("database/key.txt"));
@@ -89,8 +71,9 @@ public class LyricsDownloader {
         System.out.println("We already downloaded " + amountDownloaded + " files");
 
         for (TrackInformation track : tracks) {
-            if (tracksDatabase.containsKey(track.nameSong + "-" + track.nameArtist)) {
-                System.out.println("Skipping " + track.nameSong + " from " + track.nameArtist);
+            String keyInDatabase = track.getTrackName() + "-" + track.getArtistName();
+            if (tracksDatabase.containsKey(keyInDatabase)) {
+                System.out.println("Skipping " + track.getTrackName() + " from " + track.getArtistName());
                 continue;
             }
             if (amountDownloaded > 500) {
@@ -99,59 +82,69 @@ public class LyricsDownloader {
             }
             try {
 
-                  TrackInformation lyrics = getLyrics(musixMatch, track);
-                //TrackInformation lyrics = getLyricsChartLyrics(track);
-
-                allLyrics.add(lyrics);
-                System.out.println("Just added something to the database " + tracksDatabase.size());
-                tracksDatabase.put(track.nameSong + "-" + track.nameArtist, track);
-                System.out.println("2 Just added something to the database" + tracksDatabase.size());
-
-                System.out.println("Downloaded " + track.nameArtist + " ---- " + track.nameSong);
+                TrackInformation lyrics = getLyrics(musixMatch, track);
+                allLyrics.add(lyrics);              
+                tracksDatabase.put(keyInDatabase, track);
                 amountDownloaded += 1;
                 saveAmountOfFilesDownloaded(amountDownloaded);
                 saveTracksDatabase(tracksDatabase);
             } catch (MalformedURLException ex) {
                 Logger.getLogger(LyricsDownloader.class.getName()).log(Level.SEVERE, null, ex);
+                
+                // TODO: what to do when not found?
+                tracksDatabase.put(keyInDatabase, track);
+                
             }
         }
         return allLyrics;
     }
 
-    private TrackInformation getLyrics(MusixMatch musixMatch, TrackInformation firstInfo) throws MusixMatchException {
+    private TrackInformation getLyrics(MusixMatch musixMatch, TrackInformation firstInfo) {
         try {
             // Track Search [ Fuzzy ]
-            System.out.println("Name song:-" + firstInfo.nameSong+"-");
-            System.out.println("Name artist:-" + firstInfo.nameArtist+"-");
-            Track track = musixMatch.getMatchingTrack(firstInfo.nameSong, firstInfo.nameArtist);
+            System.out.println("Name song:-" + firstInfo.getTrackName()+"-");
+            System.out.println("Name artist:-" + firstInfo.getArtistName()+"-");
+            
+            Track track = musixMatch.getMatchingTrack(firstInfo.getTrackName(), firstInfo.getArtistName());
             
             TrackData data = track.getTrack();
-            
-            
+      
+            System.out.println("Track share URL " + data.getTrackShareURL());
             System.out.println("AlbumID : " + data.getAlbumId());
             System.out.println("Album Name : " + data.getAlbumName());
             System.out.println("Artist ID : " + data.getArtistId());
             System.out.println("Album Name : " + data.getArtistName());
             System.out.println("Track ID : " + data.getTrackId());
+            
+            
             int trackID = data.getTrackId();
-            
+            firstInfo.setMusicxmatchInfo(data);
 
-            Lyrics lyrics = musixMatch.getLyrics(trackID);
-            
-            System.out.println("Lyrics ID       : " + lyrics.getLyricsId());
-            System.out.println("Lyrics Language : " + lyrics.getLyricsLang());
-            System.out.println("Lyrics Body     : " + lyrics.getLyricsBody());
-            System.out.println("Script-Tracking-URL : " + lyrics.getScriptTrackingURL());
-            System.out.println("Pixel-Tracking-URL : " + lyrics.getPixelTrackingURL());
-            System.out.println("Lyrics Copyright : " + lyrics.getLyricsCopyright());
+            if(data.getHas_lyrics()==1)
+            {
+                Lyrics lyrics = musixMatch.getLyrics(trackID);
+                
+                System.out.println("Lyrics ID       : " + lyrics.getLyricsId());
+                System.out.println("Lyrics Language : " + lyrics.getLyricsLang());
+                System.out.println("Lyrics Body     : " + lyrics.getLyricsBody());
+                System.out.println("Lyrics Copyright : " + lyrics.getLyricsCopyright());
 
-            firstInfo.setLyrics(lyrics.getLyricsBody(), lyrics.getLyricsLang(), lyrics.getLyricsId());
-            firstInfo.setMusicxmatchInfo(lyrics.getScriptTrackingURL(), lyrics.getPixelTrackingURL(), lyrics.getLyricsCopyright());
+                firstInfo.setLyrics(lyrics.getLyricsBody(), lyrics.getLyricsLang(), lyrics.getLyricsCopyright());
+            }
+            else
+            {
+                firstInfo.setLyrics("sno slyrics sfound", "sno slyrics sfound", "sno slyrics sfound");
+            }
+            
 
             return firstInfo;
-        } catch (Exception e) {
+        } 
+        catch (MusixMatchException e) {
             e.printStackTrace();
-            firstInfo.setLyrics("sno slyrics", "sunknown", -1);
+            return firstInfo;
+        }
+        catch (JsonSyntaxException e) {
+            e.printStackTrace();
             return firstInfo;
         }
     }
@@ -184,14 +177,45 @@ public class LyricsDownloader {
         while (it.hasNext()) {
             Map.Entry pairs = (Map.Entry) it.next();
             JSONObject trackToAdd = new JSONObject();
-            trackToAdd.put("nameArtist", ((TrackInformation) pairs.getValue()).nameArtist);
-            trackToAdd.put("nameSong", ((TrackInformation) pairs.getValue()).nameSong);
-            trackToAdd.put("songtext", ((TrackInformation) pairs.getValue()).lyricsBody);
-            trackToAdd.put("lyricsID", ((TrackInformation) pairs.getValue()).LyricsID);
-            trackToAdd.put("language", ((TrackInformation) pairs.getValue()).language);
-            trackToAdd.put("scriptTrackingUrl", ((TrackInformation) pairs.getValue()).ScriptTrackingURL);
-            trackToAdd.put("pixelTrackingUrl", ((TrackInformation) pairs.getValue()).PixelTrackingURL);
-            trackToAdd.put("copyright", ((TrackInformation) pairs.getValue()).LyricsCopyright);
+            
+            
+            trackToAdd.put("trackId", ((TrackInformation) pairs.getValue()).getTrackId());
+            trackToAdd.put("trackMbid", ((TrackInformation) pairs.getValue()).getTrackMbid());
+            trackToAdd.put("track_spotify_id", ((TrackInformation) pairs.getValue()).getTrack_spotify_id());
+
+            trackToAdd.put("track_soundcloud_id", ((TrackInformation) pairs.getValue()).getTrack_soundcloud_id());
+            trackToAdd.put("track_rating", ((TrackInformation) pairs.getValue()).getTrack_rating());
+            trackToAdd.put("track_length", ((TrackInformation) pairs.getValue()).getTrack_length());
+            trackToAdd.put("commontrack_id", ((TrackInformation) pairs.getValue()).getCommontrack_id());
+            trackToAdd.put("explicit", ((TrackInformation) pairs.getValue()).getExplicit());
+            trackToAdd.put("has_lyrics", ((TrackInformation) pairs.getValue()).getHas_lyrics());
+            trackToAdd.put("has_subtitles", ((TrackInformation) pairs.getValue()).getHas_subtitles());
+            trackToAdd.put("num_favourite", ((TrackInformation) pairs.getValue()).getNum_favourite());
+            trackToAdd.put("album_coverart_100x100", ((TrackInformation) pairs.getValue()).getAlbum_coverart_100x100());
+            trackToAdd.put("album_coverart_350x350", ((TrackInformation) pairs.getValue()).getAlbum_coverart_350x350());
+            trackToAdd.put("album_coverart_500x500", ((TrackInformation) pairs.getValue()).getAlbum_coverart_500x500());
+            trackToAdd.put("album_coverart_800x800", ((TrackInformation) pairs.getValue()).getAlbum_coverart_800x800());
+            trackToAdd.put("track_edit_url", ((TrackInformation) pairs.getValue()).getTrack_edit_url());
+            trackToAdd.put("updated_time", ((TrackInformation) pairs.getValue()).getUpdated_time());
+            trackToAdd.put("albumId", ((TrackInformation) pairs.getValue()).getAlbumId());
+            trackToAdd.put("albumName", ((TrackInformation) pairs.getValue()).getAlbumName());
+            trackToAdd.put("artistId", ((TrackInformation) pairs.getValue()).getArtistId());
+            trackToAdd.put("artistMbid", ((TrackInformation) pairs.getValue()).getArtistMbid());
+            trackToAdd.put("artistName", ((TrackInformation) pairs.getValue()).getArtistName());
+            
+            trackToAdd.put("track_share_url", ((TrackInformation) pairs.getValue()).getTrack_share_url());
+            trackToAdd.put("instrumental", ((TrackInformation) pairs.getValue()).getInstrumental());
+            trackToAdd.put("lyricsId", ((TrackInformation) pairs.getValue()).getLyricsId());
+            trackToAdd.put("lyricsLength", ((TrackInformation) pairs.getValue()).getLyricsLength());
+            trackToAdd.put("subtitleId", ((TrackInformation) pairs.getValue()).getSubtitleId());
+            trackToAdd.put("trackName", ((TrackInformation) pairs.getValue()).getTrackName());
+            
+             //trackToAdd.put("restricted", ((TrackInformation) pairs.getValue()).getRestricted());
+             trackToAdd.put("lyrics_body", ((TrackInformation) pairs.getValue()).getLyrics_body());
+             trackToAdd.put("lyrics_language", ((TrackInformation) pairs.getValue()).getLyrics_language());
+             trackToAdd.put("lyrics_copyright", ((TrackInformation) pairs.getValue()).getLyrics_copyright());
+
+     
 
             array.put(trackToAdd);
         }
@@ -222,102 +246,5 @@ public class LyricsDownloader {
         }
         System.err.println("Generating new database");
         return new HashMap<String, TrackInformation>();
-    }
-
-    private TrackInformation getLyricsChartLyrics(TrackInformation track) throws MalformedURLException, IOException, SAXException, ParserConfigurationException, TransformerConfigurationException, TransformerException {
-
-        String urlString = "http://api.chartlyrics.com/apiv1.asmx/SearchLyric?artist=michael%20jackson&song=bad";
-        URL url = new URL(urlString);
-        URLConnection conn = url.openConnection();
-
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        DocumentBuilder builder = factory.newDocumentBuilder();
-        InputStream in = conn.getInputStream();
-        Document doc = builder.parse(in);
-        in.close();
-        
-        
-        NodeList nodes = doc.getElementsByTagName("SearchLyricResult");
-        
-        System.out.println("There are " + nodes.getLength() + "  elements.");
-        
-        for (int i = 0; i < nodes.getLength(); i++) {
-           Element element = (Element) nodes.item(i);
-
-           NodeList name = element.getElementsByTagName("LyricChecksum");
-           Element line = (Element) name.item(0);
-
-           System.out.println("TrackChecksum: " + line.getFirstChild().getTextContent());
-
-           System.out.println("TrackId: " + line.getAttribute("LyricId"));
-           getSongtext(line.getAttribute("LyricId"), line.getFirstChild().getTextContent());
-         //  http://api.chartlyrics.com/apiv1.asmx/GetLyric?lyricId=1710&lyricCheckSum=adc1973bc2401c48d9e088e93cda83c7
-/*
-           NodeList age = element.getElementsByTagName("age");
-           line = (Element) age.item(0);
-           System.out.println("Age: " + line.getFirstChild().getTextContent());
-
-           NodeList hobby = element.getElementsByTagName("hobby");
-           for(int j=0;j<hobby.getLength();j++)
-           {
-              line = (Element) hobby.item(j);
-              System.out.println("Hobby: " + line.getFirstChild().getTextContent());
-           }
-*/
-           System.out.println();
-           break;
-        }
-        
-        
-            
-        TransformerFactory factory2 = TransformerFactory.newInstance();
-        Transformer xform = factory2.newTransformer();
-
-// that’s the default xform; use a stylesheet to get a real one
-        xform.transform(new DOMSource(doc), new StreamResult(System.out));
-        return track;
-    }
-    
-    
-     private String getSongtext(String lyricID, String lyricChecksum) throws MalformedURLException, IOException, ParserConfigurationException, SAXException {
-
-        String urlString = "http://api.chartlyrics.com/apiv1.asmx/GetLyric?lyricId="+lyricID+"&lyricCheckSum="+lyricChecksum;
-        URL url = new URL(urlString);
-        URLConnection conn = url.openConnection();
-        
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        DocumentBuilder builder = factory.newDocumentBuilder();
-        InputStream in = conn.getInputStream();
-        Document doc = builder.parse(in);
-        in.close();
-        NodeList nodes = doc.getElementsByTagName("SearchLyricResult");
-        System.out.println("There are " + nodes.getLength() + "  elements.");
-        
-        for (int i = 0; i < nodes.getLength(); i++) {
-           Element element = (Element) nodes.item(i);
-
-           NodeList name = element.getElementsByTagName("Lyric");
-           Element line = (Element) name.item(0);
-
-           System.out.println("Lyric: " + line.getFirstChild().getTextContent());
-           return line.getFirstChild().getTextContent();
-//           System.out.println("TrackId: " + line.getAttribute("LyricId"));
-           
-   //        http://api.chartlyrics.com/apiv1.asmx/GetLyric?lyricId=1710&lyricCheckSum=adc1973bc2401c48d9e088e93cda83c7
-/*
-           NodeList age = element.getElementsByTagName("age");
-           line = (Element) age.item(0);
-           System.out.println("Age: " + line.getFirstChild().getTextContent());
-
-           NodeList hobby = element.getElementsByTagName("hobby");
-           for(int j=0;j<hobby.getLength();j++)
-           {
-              line = (Element) hobby.item(j);
-              System.out.println("Hobby: " + line.getFirstChild().getTextContent());
-           }
-*/
-           
-        }
-        return "sno slyrics sfound";
     }
 }

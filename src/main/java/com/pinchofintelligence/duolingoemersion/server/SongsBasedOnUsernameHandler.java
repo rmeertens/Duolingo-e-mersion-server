@@ -119,9 +119,11 @@ class SongsBasedOnUsernameHandler implements HttpHandler {
             for (int x = scores.size() - 1; x > scores.size() - amount && x > 0; x--) {
                 JSONObject jsonResponse = new JSONObject();
 
-                jsonResponse.put("Artist", scores.get(x).trackInformation.nameArtist);
-                jsonResponse.put("NameSong", scores.get(x).trackInformation.nameSong);
+                jsonResponse.put("Artist", tracksWithCorrectLanguage.get(x).getArtistName());
+                jsonResponse.put("NameSong", tracksWithCorrectLanguage.get(x).getTrackName());
                 jsonResponse.put("Score", scores.get(x).score);
+                jsonResponse.put("TrackShareURL", tracksWithCorrectLanguage.get(x).getTrack_share_url());
+                jsonResponse.put("SpotifyID", tracksWithCorrectLanguage.get(x).getTrack_spotify_id());
 
                 best10Matches.put(jsonResponse);
             }
@@ -141,10 +143,10 @@ class SongsBasedOnUsernameHandler implements HttpHandler {
      * @return
      */
     private int getScore(TrackInformation lyric, ArrayList<String> knownWords) {
-        System.out.println(lyric.language);
+        
         double score = 0.0;
         double wordsTested = 0.0;
-        String[] wordsInLyric = lyric.lyricsBody.split(" ");
+        String[] wordsInLyric = lyric.getLyrics_body().split(" ");
 
         for (String word : wordsInLyric) {
             wordsTested++;

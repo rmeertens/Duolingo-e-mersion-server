@@ -103,8 +103,11 @@ import org.json.JSONObject;
                 JSONArray randomSongsReturning = new JSONArray();
                 for (int x = tracksWithCorrectLanguage.size() - 1; x > tracksWithCorrectLanguage.size() - 10 && x > 0; x--) {
                     JSONObject jsonResponse = new JSONObject();
-                    jsonResponse.put("Artist", tracksWithCorrectLanguage.get(x).nameArtist);
-                    jsonResponse.put("NameSong", tracksWithCorrectLanguage.get(x).nameSong);
+                    jsonResponse.put("Artist", tracksWithCorrectLanguage.get(x).getArtistName());
+                    jsonResponse.put("NameSong", tracksWithCorrectLanguage.get(x).getTrackName());
+                    jsonResponse.put("TrackShareURL", tracksWithCorrectLanguage.get(x).getTrack_share_url());
+                    jsonResponse.put("SpotifyID", tracksWithCorrectLanguage.get(x).getTrack_spotify_id());
+                    jsonResponse.put("SoundcloudID", tracksWithCorrectLanguage.get(x).getTrack_soundcloud_id());
                     randomSongsReturning.put(jsonResponse);
                 }
                 return randomSongsReturning;
@@ -120,8 +123,8 @@ import org.json.JSONObject;
             while (it.hasNext()) {
                 Map.Entry pairs = (Map.Entry) it.next();
                 TrackInformation lyric = (TrackInformation) pairs.getValue();
-                if(lyric.lyricsBody != null){
-                    if(lyric.language.equals(language)){
+                if(lyric.getLyrics_body() != null){
+                    if(lyric.getLyrics_language().equals(language)){
                         tracksWithCorrectLanguage.add(lyric);
                     }
                 }

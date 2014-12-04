@@ -25,25 +25,25 @@ import org.json.JSONException;
 public class MainClass {
 
     public static void main(String[] args) throws MusixMatchException, IOException, JSONException, Exception {
-        /*
+        
         LyricsDownloader lyricsDownloader = new LyricsDownloader();
         ArrayList<TrackInformation> popularTracks = getPopularTracks();
         ArrayList<TrackInformation> lyrics = lyricsDownloader.getLyrics(popularTracks);
-*/
+
         DuolingoEmersionServer server = new DuolingoEmersionServer();
     }
 
     static public ArrayList<TrackInformation> getPopularTracks() throws IOException {
         ArrayList<TrackInformation> popularTracks = new ArrayList<TrackInformation>();
         String rootFolder = "database/";
+        popularTracks.addAll(getTrackInformationFromFile(rootFolder + "top2000stemlijst_2012.csv"));
         popularTracks.addAll(getTrackInformationFromFile(rootFolder + "zweedsvankim.csv"));
         popularTracks.addAll(getTrackInformationFromFile(rootFolder + "swedish-music.csv"));
         popularTracks.addAll(getTrackInformationFromFile(rootFolder + "spanish-music-database-2-version-13.csv"));
-        popularTracks.addAll(getTrackInformationFromFile(rootFolder + "top2000stemlijst_2012.csv"));
-        popularTracks.addAll(getTrackInformationFromFile(rootFolder + "aliensamaditop300artistschart.csv"));
-        System.out.println("now knows " + popularTracks.size());
 
-        System.out.println("now knows " + popularTracks.size());
+        popularTracks.addAll(getTrackInformationFromFile(rootFolder + "aliensamaditop300artistschart.csv"));
+        System.out.println("Amount of tracks we want to download: " + popularTracks.size());
+
 
         return popularTracks;
     }
