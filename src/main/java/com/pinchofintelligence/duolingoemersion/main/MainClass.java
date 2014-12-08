@@ -8,10 +8,14 @@ package com.pinchofintelligence.duolingoemersion.main;
 import com.pinchofintelligence.duolingoemersion.crawlers.music.LyricsDownloader;
 import com.pinchofintelligence.duolingoemersion.crawlers.music.TrackInformation;
 import com.pinchofintelligence.duolingoemersion.server.DuolingoEmersionServer;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
+
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.List;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
@@ -36,6 +40,15 @@ public class MainClass {
     static public ArrayList<TrackInformation> getPopularTracks() throws IOException {
         ArrayList<TrackInformation> popularTracks = new ArrayList<TrackInformation>();
         String rootFolder = "database/";
+       
+        BufferedReader readFile = new BufferedReader(new FileReader("database/knownPlaylists"));
+        String line = readFile.readLine();
+        List<String> spotifyPlaylists = new ArrayList<>();
+        while ((line = readFile.readLine()) != null) {            
+            popularTracks.addAll(getTrackInformationFromFile(rootFolder + line));
+        }
+           
+        readFile.close();
         popularTracks.addAll(getTrackInformationFromFile(rootFolder + "top2000stemlijst_2012.csv"));
         popularTracks.addAll(getTrackInformationFromFile(rootFolder + "zweedsvankim.csv"));
         popularTracks.addAll(getTrackInformationFromFile(rootFolder + "swedish-music.csv"));

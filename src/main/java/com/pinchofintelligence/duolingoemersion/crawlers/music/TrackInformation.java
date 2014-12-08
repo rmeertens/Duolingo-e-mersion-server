@@ -35,14 +35,15 @@ public class TrackInformation implements java.io.Serializable {
     private String albumName;
     private String artistId;
     private String artistMbid;
-    private String artistName;
+    private String artistNameMusixMatch;
+    private String artistNameOwnDatabase;
     private String track_share_url;
     private int instrumental;
     private int lyricsId;
     private int lyricsLength;
     private int subtitleId;
-    private String trackName;
-    
+    private String trackNameMusixMatch;
+    private String trackNameOwnDatabase;
     
      
      //private int restricted;
@@ -50,9 +51,9 @@ public class TrackInformation implements java.io.Serializable {
      private String lyrics_language;
      private String lyrics_copyright;
         
-    public TrackInformation(String nameArtist, String nameSong) {
-        this.artistName = nameArtist;
-        this.trackName = nameSong;
+    public TrackInformation(String nameArtistDatabase, String nameSongDatabase) {
+        this.artistNameOwnDatabase = nameArtistDatabase;
+        this.trackNameOwnDatabase = nameSongDatabase;
     }
     public void setLyrics(String lyricsBody, String lyricsLanguage, String LyricsCopyright)
     {
@@ -84,14 +85,14 @@ public class TrackInformation implements java.io.Serializable {
         this.albumName = info.getAlbumName();
         this.artistId = info.getArtistId();
         this.artistMbid = info.getArtistMbid();
-        //this.artistName = info.getArtistName(); //WARNING: DO NOT SET THE ARTIST NAME FROM HERE!
+        this.artistNameMusixMatch = info.getArtistName(); 
         
         this.track_share_url = info.getTrackShareURL();
         this.instrumental = info.getInstrumental();
         this.lyricsId = info.getLyricsId();
         this.lyricsLength = info.getLyricsLength();
         this.subtitleId = info.getSubtitleId();
-        //this.trackName = info.getTrackName(); //WARNING: DO NOT SET THE TRACK NAME FROM HERE!
+        this.trackNameMusixMatch = info.getTrackName(); 
     }
     
     
@@ -264,13 +265,6 @@ public class TrackInformation implements java.io.Serializable {
         this.artistMbid = artistMbid;
     }
 
-    public String getArtistName() {
-        return artistName;
-    }
-
-    public void setArtistName(String artistName) {
-        this.artistName = artistName;
-    }
 
 
     public String getTrack_share_url() {
@@ -313,13 +307,6 @@ public class TrackInformation implements java.io.Serializable {
         this.subtitleId = subtitleId;
     }
 
-    public String getTrackName() {
-        return trackName;
-    }
-
-    public void setTrackName(String trackName) {
-        this.trackName = trackName;
-    }
 
 
     public String getLyrics_body() {
@@ -345,4 +332,38 @@ public class TrackInformation implements java.io.Serializable {
     public void setLyrics_copyright(String lyrics_copyright) {
         this.lyrics_copyright = lyrics_copyright;
     }
+
+    public String getArtistNameMusixMatch() {
+        return artistNameMusixMatch;
+    }
+
+    public void setArtistNameMusixMatch(String artistNameMusixMatch) {
+        this.artistNameMusixMatch = artistNameMusixMatch;
+    }
+
+    public String getArtistNameOwnDatabase() {
+        return artistNameOwnDatabase;
+    }
+
+    public void setArtistNameOwnDatabase(String artistNameOwnDatabase) {
+        this.artistNameOwnDatabase = artistNameOwnDatabase;
+    }
+
+    public String getTrackNameMusixMatch() {
+        return trackNameMusixMatch;
+    }
+
+    public void setTrackNameMusixMatch(String trackNameMusixMatch) {
+        this.trackNameMusixMatch = trackNameMusixMatch;
+    }
+
+    public String getTrackNameOwnDatabase() {
+        return trackNameOwnDatabase;
+    }
+
+    public void setTrackNameOwnDatabase(String trackNameOwnDatabase) {
+        this.trackNameOwnDatabase = trackNameOwnDatabase;
+    }
+    
+    
 }

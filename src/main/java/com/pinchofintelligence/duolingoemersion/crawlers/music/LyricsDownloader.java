@@ -71,41 +71,35 @@ public class LyricsDownloader {
         System.out.println("We already downloaded " + amountDownloaded + " files");
 
         for (TrackInformation track : tracks) {
-            String keyInDatabase = track.getTrackName() + "-" + track.getArtistName();
+            String keyInDatabase = track.getArtistNameOwnDatabase()+ "-" + track.getTrackNameOwnDatabase();
             if (tracksDatabase.containsKey(keyInDatabase)) {
-                System.out.println("Skipping " + track.getTrackName() + " from " + track.getArtistName());
+                System.out.println("Skipping " + keyInDatabase);
                 continue;
             }
             if (amountDownloaded > 500) {
                 System.err.println("ERROR! Downloaded " + amountDownloaded + " files!");
                 break;
             }
-            try {
+            
+            TrackInformation lyrics = getLyrics(musixMatch, track);
+            allLyrics.add(lyrics);              
+            tracksDatabase.put(keyInDatabase, track);
+            amountDownloaded += 1;
+            saveAmountOfFilesDownloaded(amountDownloaded);
 
-                TrackInformation lyrics = getLyrics(musixMatch, track);
-                allLyrics.add(lyrics);              
-                tracksDatabase.put(keyInDatabase, track);
-                amountDownloaded += 1;
-                saveAmountOfFilesDownloaded(amountDownloaded);
-                saveTracksDatabase(tracksDatabase);
-            } catch (MalformedURLException ex) {
-                Logger.getLogger(LyricsDownloader.class.getName()).log(Level.SEVERE, null, ex);
-                
-                // TODO: what to do when not found?
-                tracksDatabase.put(keyInDatabase, track);
-                
-            }
+            
         }
+        saveTracksDatabase(tracksDatabase);
         return allLyrics;
     }
 
     private TrackInformation getLyrics(MusixMatch musixMatch, TrackInformation firstInfo) {
         try {
             // Track Search [ Fuzzy ]
-            System.out.println("Name song:-" + firstInfo.getTrackName()+"-");
-            System.out.println("Name artist:-" + firstInfo.getArtistName()+"-");
+            System.out.println("Seaching " + firstInfo.getTrackNameOwnDatabase() + " by " + firstInfo.getArtistNameOwnDatabase());
             
-            Track track = musixMatch.getMatchingTrack(firstInfo.getTrackName(), firstInfo.getArtistName());
+            
+            Track track = musixMatch.getMatchingTrack(firstInfo.getTrackNameOwnDatabase(), firstInfo.getArtistNameOwnDatabase());
             
             TrackData data = track.getTrack();
       
@@ -201,14 +195,16 @@ public class LyricsDownloader {
             trackToAdd.put("albumName", ((TrackInformation) pairs.getValue()).getAlbumName());
             trackToAdd.put("artistId", ((TrackInformation) pairs.getValue()).getArtistId());
             trackToAdd.put("artistMbid", ((TrackInformation) pairs.getValue()).getArtistMbid());
-            trackToAdd.put("artistName", ((TrackInformation) pairs.getValue()).getArtistName());
+            trackToAdd.put("artistNameMusixMatch", ((TrackInformation) pairs.getValue()).getArtistNameMusixMatch());
+            trackToAdd.put("artistNameOwnDatabase", ((TrackInformation) pairs.getValue()).getArtistNameOwnDatabase());
             
             trackToAdd.put("track_share_url", ((TrackInformation) pairs.getValue()).getTrack_share_url());
             trackToAdd.put("instrumental", ((TrackInformation) pairs.getValue()).getInstrumental());
             trackToAdd.put("lyricsId", ((TrackInformation) pairs.getValue()).getLyricsId());
             trackToAdd.put("lyricsLength", ((TrackInformation) pairs.getValue()).getLyricsLength());
             trackToAdd.put("subtitleId", ((TrackInformation) pairs.getValue()).getSubtitleId());
-            trackToAdd.put("trackName", ((TrackInformation) pairs.getValue()).getTrackName());
+            trackToAdd.put("trackNameMusixMatch", ((TrackInformation) pairs.getValue()).getTrackNameMusixMatch());
+            trackToAdd.put("trackNameOwnDatabase", ((TrackInformation) pairs.getValue()).getTrackNameOwnDatabase());
             
              //trackToAdd.put("restricted", ((TrackInformation) pairs.getValue()).getRestricted());
              trackToAdd.put("lyrics_body", ((TrackInformation) pairs.getValue()).getLyrics_body());
