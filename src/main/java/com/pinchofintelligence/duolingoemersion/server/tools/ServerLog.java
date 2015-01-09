@@ -6,18 +6,19 @@
 package com.pinchofintelligence.duolingoemersion.server.tools;
 
 import com.sun.net.httpserver.HttpExchange;
-import java.util.Iterator;
+import java.io.IOException;
 import java.util.Map;
+import java.util.logging.FileHandler;
 import java.util.logging.Level;
-import javax.swing.JFrame;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
-import javax.swing.text.DefaultCaret;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 
 /**
  *
  * @author Roland
  */
+
+/*
 public class ServerLog {
 
     JTextArea textArea;
@@ -47,5 +48,48 @@ public class ServerLog {
             textArea.append("--> " + pairs.getKey() + " = " + pairs.getValue());
         }
         textArea.append(" ip source: " + exchangeObject.getRemoteAddress().toString());   
+    }
+}*/
+
+public class ServerLog {
+    private Logger logger ;
+    public ServerLog() {
+    logger = Logger.getLogger("MyLog");  
+    FileHandler fh;  
+
+    try {  
+
+        // This block configure the logger with handler and formatter  
+        fh = new FileHandler("MyLogFile.log");  
+        logger.addHandler(fh);
+        SimpleFormatter formatter = new SimpleFormatter();  
+        fh.setFormatter(formatter);  
+
+        // the following statement is used to log any messages  
+        logger.info("My first log");  
+
+    } catch (SecurityException e) {  
+        e.printStackTrace();  
+    
+    }   catch (IOException ex) {  
+            Logger.getLogger(ServerLog.class.getName()).log(Level.SEVERE, null, ex);
+        }  
+
+    logger.info("Hi How r u?");  
+
+    }
+    
+    public void addString(String string)
+    {
+        logger.info(string);
+    }
+
+    public void addEvent(Object source, HttpExchange exchangeObject, Map<String, String> parms) {
+        String totalArguments = "";
+        for (Map.Entry pairs : parms.entrySet()) {
+            totalArguments += "--> " + pairs.getKey() + " = " + pairs.getValue();
+        }
+        totalArguments += " ip source: " + exchangeObject.getRemoteAddress().toString();   
+        logger.info(source.getClass().getName() + ": " + totalArguments);
     }
 }

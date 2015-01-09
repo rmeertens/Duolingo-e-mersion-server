@@ -19,8 +19,6 @@ import java.util.List;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
-import org.jmusixmatch.MusixMatchException;
-import org.json.JSONException;
 
 /**
  *
@@ -28,7 +26,7 @@ import org.json.JSONException;
  */
 public class MainClass {
 
-    public static void main(String[] args) throws MusixMatchException, IOException, JSONException, Exception {
+    public static void main(String[] args) throws IOException, Exception {
         
         LyricsDownloader lyricsDownloader = new LyricsDownloader();
         ArrayList<TrackInformation> popularTracks = getPopularTracks();
