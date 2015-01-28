@@ -27,6 +27,8 @@ public class JSONArrayGenerator {
         jsonResponse.put("TrackShareURL", track.getTrack_share_url());
         jsonResponse.put("SpotifyID", track.getTrack_spotify_id());
         jsonResponse.put("SoundcloudId", track.getTrack_soundcloud_id());
+        jsonResponse.put("AlbumArt", track.getAlbum_coverart_100x100());
+        
         return jsonResponse;
     }
 
